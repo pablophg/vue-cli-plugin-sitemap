@@ -60,30 +60,39 @@ async function generateSitemapIndexXML(nbSitemaps, options) {
 
 function generateSitemapXML(urls, options) {
 	return '<?xml version="1.0" encoding="UTF-8"?>\n'
-	     + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+	     + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
 	     +     `${urls.map(url => generateURLTag(url, options)).join('')}`
 	     + '</urlset>';
 }
 
 function generateURLTag(url, options) {
-	// Create a tag for each meta property
-	const metaTags = ['lastmod', 'changefreq', 'priority'].map(function(tag) {
-		if (tag in url == false && tag in options.defaults == false) {
-			return '';
-		}
+    // Create a tag for each meta property
+    const metaTags = ['lastmod', 'changefreq', 'priority', 'isLocale'].map(function(tag) {
+        if (tag in url == false && tag in options.defaults == false) {
+            return '';
+        }
 
-		let value = (tag in url) ? url[tag] : options.defaults[tag];
+        let value = (tag in url) ? url[tag] : options.defaults[tag];
 
-		// Fix the bug of whole-number priorities
-		if (tag == 'priority') {
-			if (value == 0) value = '0.0';
-			if (value == 1) value = '1.0';
-		}
+        // Fix the bug of whole-number priorities
+        if (tag == 'priority') {
+            if (value == 0) value = '0.0';
+            if (value == 1) value = '1.0';
+        }
 
-		return `\t\t<${tag}>${value}</${tag}>\n`;
-	});
+        if (tag === 'isLocale') {
+            let alternateUrls = "";
+            url.slugs.forEach(function (slug) {
+                const alternateUrl = url.loc.replace(new RegExp(`\/(${url.slugs.join("|")})(\/|)`, "g"), `/${slug}/`);
+				alternateUrls += `<xhtml:link rel="alternate" hreflang="${slug}" href="${alternateUrl}"/>`;
+            })
+            return `\t\t${alternateUrls}\n`;
+        }
 
-	return `\t<url>\n\t\t<loc>${url.loc}</loc>\n${metaTags.join('')}\t</url>\n`;
+        return `\t\t<${tag}>${value}</${tag}>\n`;
+    });
+
+    return `\t<url>\n\t\t<loc>${url.loc}</loc>\n${metaTags.join('')}\t</url>\n`;
 }
 
 function escapeUrl(url) {

@@ -55,6 +55,10 @@ const urlMetaTagsSchema = {
 		minimum:    0.0,
 		maximum:    1.0,
 	},
+    isLocale: {
+		type:		'boolean',
+		default:	false
+	}
 };
 
 /**
